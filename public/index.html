@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice Generator</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen">
+
+<!-- ── Top bar ─────────────────────────────────────────────────────────────── -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+  <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <span class="text-lg font-bold text-slate-900 tracking-tight">Invoice Generator</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="newInvoiceBtn" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all hover:bg-slate-100 disabled:opacity-60 disabled:cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.49"/>
+        </svg>
+        New
+      </button>
+      <button id="previewBtn" class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-sm px-5 py-2.5 rounded-xl transition-all border border-slate-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        Preview
+      </button>
+      <button id="generateBtn" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-200 disabled:opacity-60 disabled:cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Generate PDF
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Toast ───────────────────────────────────────────────────────────────── -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+  <div id="toastInner" class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white min-w-[220px]">
+    <svg id="toastIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></svg>
+    <span id="toastMsg"></span>
+  </div>
+</div>
+
+<!-- ── Main ────────────────────────────────────────────────────────────────── -->
+<main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
+
+  <!-- ── Business Info ───────────────────────────────────────────────── -->
+  <section class="card">
+    <div class="card-header">
+      <div class="flex items-center gap-2.5">
+        <div class="section-icon bg-indigo-100 text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <div>
+          <h2 class="card-title">Your Business</h2>
+          <p class="card-sub">Saved and reused across invoices</p>
+        </div>
+      </div>
+      <button id="saveConfigBtn" class="btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Info
+      </button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="field-group lg:col-span-1">
+        <label class="field-label">Business Name <span class="required">*</span></label>
+        <input id="senderName" type="text" class="field-input" placeholder="Acme Inc." />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input id="senderEmail" type="email" class="field-input" placeholder="hello@acme.com" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Phone</label>
+        <input id="senderPhone" type="text" class="field-input" placeholder="+1 (555) 000-0000" />
+      </div>
+      <div class="field-group sm:col-span-2">
+        <label class="field-label">Street Address</label>
+        <input id="senderAddress" type="text" class="field-input" placeholder="123 Main Street" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">City, State, ZIP</label>
+        <input id="senderCityStateZip" type="text" class="field-input" placeholder="New York, NY 10001" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Website</label>
+        <input id="senderWebsite" type="text" class="field-input" placeholder="www.acme.com" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Default Currency</label>
+        <select id="senderCurrency" class="field-input">
+          <option value="USD">USD — US Dollar</option>
+          <option value="EUR">EUR — Euro</option>
+          <option value="GBP">GBP — British Pound</option>
+          <option value="CAD">CAD — Canadian Dollar</option>
+          <option value="AUD">AUD — Australian Dollar</option>
+          <option value="JPY">JPY — Japanese Yen</option>
+          <option value="INR">INR — Indian Rupee</option>
+          <option value="CHF">CHF — Swiss Franc</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Default Tax Rate (%)</label>
+        <input id="senderTaxRate" type="number" min="0" max="100" step="0.1" class="field-input" placeholder="0" />
+      </div>
+      <div class="field-group sm:col-span-2 lg:col-span-3">
+        <label class="field-label">Default Notes / Payment Terms</label>
+        <textarea id="senderNotes" class="field-input resize-none" rows="2" placeholder="Payment is due within 30 days. Thank you for your business!"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Invoice Details + Bill To ───────────────────────────────────── -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Invoice Details -->
+    <section class="card">
+      <div class="card-header">
+        <div class="flex items-center gap-2.5">
+          <div class="section-icon bg-violet-100 text-violet-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div>
+            <h2 class="card-title">Invoice Details</h2>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="field-group">
+            <label class="field-label">Invoice Number <span class="required">*</span></label>
+            <input id="invNumber" type="text" class="field-input font-mono" placeholder="INV-001" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Currency</label>
+            <select id="invCurrency" class="field-input">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="CAD">CAD</option>
+              <option value="AUD">AUD</option>
+              <option value="JPY">JPY</option>
+              <option value="INR">INR</option>
+              <option value="CHF">CHF</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="field-group">
+            <label class="field-label">Issue Date <span class="required">*</span></label>
+            <input id="invDate" type="date" class="field-input" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Due Date</label>
+            <input id="invDueDate" type="date" class="field-input" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="field-group">
+            <label class="field-label">Tax Rate (%)</label>
+            <input id="invTaxRate" type="number" min="0" max="100" step="0.1" class="field-input" placeholder="0" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">PO Number</label>
+            <input id="invPoNumber" type="text" class="field-input" placeholder="Optional" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notes / Terms</label>
+          <textarea id="invNotes" class="field-input resize-none" rows="3" placeholder="Payment terms, bank details, etc."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bill To -->
+    <section class="card">
+      <div class="card-header">
+        <div class="flex items-center gap-2.5">
+          <div class="section-icon bg-cyan-100 text-cyan-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <h2 class="card-title">Bill To</h2>
+            <p class="card-sub">Client / recipient</p>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="field-group">
+          <label class="field-label">Client Name <span class="required">*</span></label>
+          <input id="clientName" type="text" class="field-input" placeholder="Jane Smith" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Company</label>
+          <input id="clientCompany" type="text" class="field-input" placeholder="Client Corp" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <input id="clientEmail" type="email" class="field-input" placeholder="jane@clientcorp.com" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Phone</label>
+          <input id="clientPhone" type="text" class="field-input" placeholder="+1 (555) 000-0000" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Street Address</label>
+          <input id="clientAddress" type="text" class="field-input" placeholder="456 Client Ave" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">City, State, ZIP</label>
+          <input id="clientCityStateZip" type="text" class="field-input" placeholder="Los Angeles, CA 90001" />
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── Line Items ──────────────────────────────────────────────────── -->
+  <section class="card">
+    <div class="card-header">
+      <div class="flex items-center gap-2.5">
+        <div class="section-icon bg-emerald-100 text-emerald-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </div>
+        <div>
+          <h2 class="card-title">Line Items</h2>
+        </div>
+      </div>
+      <button id="addItemBtn" class="btn-secondary text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Item
+      </button>
+    </div>
+
+    <!-- Table header -->
+    <div class="items-header grid items-center text-xs font-semibold uppercase tracking-wider text-slate-400 px-3 pb-2 border-b border-slate-100" style="grid-template-columns: 1fr 80px 120px 110px 40px;">
+      <span>Description</span>
+      <span class="text-center">Qty</span>
+      <span class="text-right">Unit Price</span>
+      <span class="text-right">Amount</span>
+      <span></span>
+    </div>
+
+    <!-- Items list -->
+    <div id="itemsList" class="space-y-1 mt-1"></div>
+
+    <!-- Totals summary -->
+    <div class="mt-6 flex justify-end">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="totals-label">Subtotal</span>
+          <span id="subtotalDisplay" class="totals-value">$0.00</span>
+        </div>
+        <div id="taxRow" class="totals-row hidden">
+          <span id="taxLabel" class="totals-label">Tax (0%)</span>
+          <span id="taxDisplay" class="totals-value">$0.00</span>
+        </div>
+        <div class="totals-row totals-grand">
+          <span class="font-bold text-indigo-600">Total Due</span>
+          <span id="totalDisplay" class="font-bold text-indigo-600 text-xl">$0.00</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="max-w-5xl mx-auto px-6 py-8 text-center text-xs text-slate-400">
+  Free Invoice Generator — data stays on your machine
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
